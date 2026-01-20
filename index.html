@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monsoon Mariner</title>
+    <title>Monsoon Mariner (Debug Mode)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Custom scrollbar for game feel */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1c1917; }
         ::-webkit-scrollbar-thumb { background: #44403c; border-radius: 3px; }
         body { -webkit-user-select: none; user-select: none; }
-        .pixel-map { image-rendering: pixelated; }
     </style>
 </head>
 <body class="bg-stone-900 h-screen flex justify-center overflow-hidden font-sans text-stone-800">
 
-    <div id="game-app" class="w-full max-w-md bg-stone-100 shadow-2xl h-full flex flex-col relative">
-        </div>
+    <div id="game-app" class="w-full max-w-md bg-stone-100 shadow-2xl h-full flex flex-col relative"></div>
 
     <script>
-        // --- 1. GAME DATA & CONSTANTS ---
+        // --- 1. CONFIGURATION ---
+        
+        // 🛠️ UPDATE YOUR PORTS HERE AFTER USING DEBUG MODE
         const PORTS = [
             { id: 'kilwa', name: 'Kilwa', region: 'Africa', x: 20, y: 70, color: '#f59e0b', img: 'https://images.unsplash.com/photo-1523726491678-bf852e717f6a?auto=format&fit=crop&q=80&w=800' },
             { id: 'aden', name: 'Aden', region: 'Arabia', x: 35, y: 35, color: '#ef4444', img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800' },
@@ -31,11 +30,11 @@
         ];
 
         const GOODS = {
-            iron: { name: 'Iron', basePrice: 10, icon: '⛏️', desc: 'Basic metal' },
-            ivory: { name: 'Ivory', basePrice: 50, icon: '🐘', desc: 'African luxury' },
-            spices: { name: 'Spices', basePrice: 40, icon: '🌶️', desc: 'Indian flavor' },
-            silk: { name: 'Silk', basePrice: 80, icon: '👘', desc: 'Chinese luxury' },
-            porcelain: { name: 'Porcelain', basePrice: 100, icon: '🏺', desc: 'Fragile art' },
+            iron: { name: 'Iron', basePrice: 10, icon: '⛏️' },
+            ivory: { name: 'Ivory', basePrice: 50, icon: '🐘' },
+            spices: { name: 'Spices', basePrice: 40, icon: '🌶️' },
+            silk: { name: 'Silk', basePrice: 80, icon: '👘' },
+            porcelain: { name: 'Porcelain', basePrice: 100, icon: '🏺' },
         };
 
         const ECONOMY = {
@@ -48,26 +47,26 @@
 
         const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const MAX_INVENTORY = 15;
-        const START_AGE = 20;
         const END_AGE = 50;
 
-        // --- 2. GAME STATE ---
-        // In Vanilla JS, we keep one big object for state
+        // --- 2. STATE ---
         let state = {
-            view: 'tutorial', // map, market, end, tutorial
+            view: 'map', // Start directly on map for debugging
+            debugMode: false,
+            lastDebugCoord: null, // Stores {x, y} of last click
             currentPortId: 'calicut',
             month: 0,
             year: 1200,
-            age: START_AGE,
+            age: 20,
             money: 120,
-            inventory: {}, // { spices: 2, silk: 1 }
+            inventory: {},
             influence: { kilwa:0, aden:0, calicut:0, malacca:0, hangzhou:0 },
-            log: [{ text: "Welcome. Winds blow West.", type: "neutral" }],
+            log: [{ text: "Welcome.", type: "neutral" }],
             activeEvents: []
         };
 
-        // --- 3. LOGIC ENGINE ---
-
+        // --- 3. LOGIC ---
+        
         function getWindDirection() {
             return (state.month >= 3 && state.month <= 8) ? 'east' : 'west';
         }
@@ -83,8 +82,6 @@
             const sellMod = 0.8 + (inf * 0.003);
             
             let prices = {};
-            
-            // Apply Events
             const eventMultipliers = {};
             state.activeEvents.forEach(ev => {
                 if (ev.effects[port]) Object.assign(eventMultipliers, ev.effects[port]);
@@ -94,85 +91,80 @@
                 const base = GOODS[key].basePrice;
                 const localMult = ECONOMY[port][key];
                 const eventMult = eventMultipliers[key] || 1.0;
-                const marketVal = base * localMult * eventMult;
-                
                 prices[key] = {
-                    buy: Math.floor(marketVal * buyMod),
-                    sell: Math.floor(marketVal * sellMod),
-                    dealText: inf < 30 ? "Stranger Price" : (inf > 80 ? "Family Deal" : "Partner Rate")
+                    buy: Math.floor(base * localMult * eventMult * buyMod),
+                    sell: Math.floor(base * localMult * eventMult * sellMod),
+                    dealText: inf < 30 ? "Stranger" : (inf > 80 ? "Family" : "Partner")
                 };
             });
             return prices;
         }
 
-        function addLog(msg, type="neutral") {
-            state.log.unshift({ text: msg, type: type });
-            if(state.log.length > 50) state.log.pop();
-            renderLog(); // Only re-render log part
-        }
-
         function advanceTime(months) {
             let newMonth = state.month + months;
             let yearAdd = 0;
-            while (newMonth > 11) {
-                newMonth -= 12;
-                yearAdd++;
-            }
+            while (newMonth > 11) { newMonth -= 12; yearAdd++; }
             state.month = newMonth;
             state.year += yearAdd;
             state.age += (months / 12);
-
-            // Roll Events
-            const roll = Math.random();
-            if(roll < 0.35) {
-                // Simplified event logic for brevity
-                const eventText = "Storms and Pirates shift the markets.";
-                addLog(eventText, "event");
+            
+            // Random Event
+            if(Math.random() < 0.35) {
+                state.log.unshift({text: "Markets shift due to storms.", type: "event"});
             } else {
                 state.activeEvents = [];
             }
 
-            if(state.age >= END_AGE) {
-                state.view = 'end';
-            }
+            if(state.age >= END_AGE) state.view = 'end';
             render();
         }
 
-        // --- 4. ACTIONS ---
+        // --- 4. DEBUG & INTERACTION ---
 
-        function actionTravel(targetId) {
+        function toggleDebug() {
+            state.debugMode = !state.debugMode;
+            state.lastDebugCoord = null;
+            render();
+        }
+
+        // 🎯 THE MAGIC FUNCTION: Gets coordinates on click
+        function handleMapClick(e) {
+            // If we are in debug mode, calculate coordinates
+            if (state.debugMode) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                // Calculate percentage relative to the container
+                const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+                const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+                
+                state.lastDebugCoord = { x, y };
+                render(); // Re-render to show the red dot and numbers
+                return; // Stop normal travel logic
+            }
+        }
+
+        function actionTravel(e, targetId) {
+            if (state.debugMode) return; // Disable travel while debugging
+            e.stopPropagation(); // Stop click from bubbling
+
             if(targetId === state.currentPortId) {
                 state.view = 'market';
                 render();
                 return;
             }
-
             const currentIdx = PORTS.findIndex(p => p.id === state.currentPortId);
             const targetIdx = PORTS.findIndex(p => p.id === targetId);
-            const direction = targetIdx > currentIdx ? 'east' : 'west';
+            const dir = targetIdx > currentIdx ? 'east' : 'west';
             const wind = getWindDirection();
 
-            if(direction !== wind) {
-                addLog(`Cannot sail ${direction}! Wind is ${wind}.`, 'bad');
+            if(dir !== wind) {
+                state.log.unshift({text: `Wind is blowing ${wind}!`, type: 'bad'});
+                render();
                 return;
             }
 
             state.currentPortId = targetId;
             state.view = 'market';
-            addLog(`Arrived in ${PORTS[targetIdx].name}`, 'good');
-            advanceTime(1);
-        }
-
-        function actionWait(type) {
-            if(type === 'guard') {
-                state.money += 10;
-                addLog("Guarded enclave. +10g", "neutral");
-            } else {
-                if(state.money < 15) { addLog("Too poor to mingle.", "bad"); return; }
-                state.money -= 15;
-                state.influence[state.currentPortId] = Math.min(100, state.influence[state.currentPortId] + 15);
-                addLog("Mingled at court. Influence up.", "good");
-            }
+            state.log.unshift({text: `Arrived at ${PORTS[targetIdx].name}`, type: 'good'});
             advanceTime(1);
         }
 
@@ -183,58 +175,65 @@
             const owned = state.inventory[item] || 0;
 
             if(isBuy) {
-                if(state.money < price) { addLog("Not enough gold.", "bad"); return; }
-                if(totalItems >= MAX_INVENTORY) { addLog("Ship full.", "bad"); return; }
-                state.money -= price;
-                state.inventory[item] = owned + 1;
+                if(state.money >= price && totalItems < MAX_INVENTORY) {
+                    state.money -= price;
+                    state.inventory[item] = owned + 1;
+                }
             } else {
-                if(owned <= 0) return;
-                state.money += price;
-                state.inventory[item] = owned - 1;
+                if(owned > 0) {
+                    state.money += price;
+                    state.inventory[item] = owned - 1;
+                }
             }
-            render(); // Re-render to update buttons/money
+            render();
         }
 
-        // --- 5. RENDERERS (The HTML Generation) ---
+        function actionWait(type) {
+            if(type === 'guard') {
+                state.money += 10;
+            } else {
+                if(state.money >= 15) {
+                    state.money -= 15;
+                    state.influence[state.currentPortId] = Math.min(100, state.influence[state.currentPortId] + 15);
+                }
+            }
+            advanceTime(1);
+        }
+
+        // --- 5. RENDERERS ---
 
         function renderHeader() {
             const wind = getWindDirection();
-            const windColor = wind === 'east' ? 'text-emerald-400' : 'text-orange-400';
-            const windText = wind === 'east' ? 'SUMMER (EAST)' : 'WINTER (WEST)';
-            
             return `
-            <div class="bg-stone-900 text-stone-100 p-2 flex justify-between items-center shadow-md z-30 shrink-0 h-14 border-b border-stone-700">
+            <div class="bg-stone-900 text-stone-100 p-2 flex justify-between items-center h-14 shrink-0 z-30 shadow-md">
                 <div class="flex items-center gap-4">
-                    <div>
-                        <span class="text-[10px] text-stone-400 uppercase tracking-wider block">Date</span>
-                        <span class="font-bold text-sm">${MONTHS[state.month]}, ${state.year}</span>
+                    <div class="leading-tight">
+                        <div class="text-[10px] text-stone-400">DATE</div>
+                        <div class="font-bold text-sm">${MONTHS[state.month]} ${state.year}</div>
                     </div>
-                    <div>
-                        <span class="text-[10px] text-stone-400 uppercase tracking-wider block">Wind</span>
-                        <div class="flex items-center gap-1 font-bold text-xs ${windColor}">
-                            <i data-lucide="wind" width="14"></i> ${windText}
+                    <div class="leading-tight">
+                        <div class="text-[10px] text-stone-400">WIND</div>
+                        <div class="font-bold text-xs ${wind==='east'?'text-emerald-400':'text-orange-400'}">
+                            ${wind==='east' ? 'EAST →' : '← WEST'}
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                     <div class="text-right">
-                        <span class="text-[10px] text-stone-400 uppercase tracking-wider block">Age</span>
-                        <span class="font-bold text-sm text-amber-100">${Math.floor(state.age)} / ${END_AGE}</span>
+                <div class="flex items-center gap-2">
+                     <div class="text-right mr-2">
+                        <div class="text-[10px] text-stone-400">GOLD</div>
+                        <div class="font-mono text-yellow-400 font-bold">${state.money}</div>
                      </div>
-                    <div class="flex items-center gap-2 bg-stone-800 px-3 py-1 rounded-full border border-stone-700">
-                        <span class="text-yellow-400">🪙</span>
-                        <span class="font-mono text-lg font-bold text-yellow-100">${state.money}</span>
-                    </div>
                 </div>
             </div>`;
         }
 
         function renderMap() {
             const wind = getWindDirection();
-            let html = `<div class="w-full h-full relative bg-[#1e293b] overflow-hidden">
-                <img src="./pixel_map.png" class="absolute inset-0 w-full h-full object-fill z-0" onerror="this.style.display='none'; this.parentNode.style.backgroundColor='#1e293b'">
+            let html = `<div class="w-full h-full relative bg-[#1e293b] overflow-hidden cursor-crosshair" onclick="handleMapClick(event)">
                 
-                <svg class="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-60">
+                <img src="./IMG_4324.png" class="absolute inset-0 w-full h-full object-fill z-0" onerror="alert('Error: IMG_4324.png not found!')">
+
+                <svg class="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-50">
                     <defs>
                         <pattern id="windPat" width="100" height="20" patternUnits="userSpaceOnUse">
                              <path d="M 10 10 Q 50 ${wind === 'east' ? 5 : 15} 90 10" fill="none" stroke="${wind === 'east' ? '#10b981' : '#f97316'}" stroke-width="0.5" stroke-dasharray="2 2" />
@@ -242,6 +241,22 @@
                     </defs>
                     <rect width="100%" height="100%" fill="url(#windPat)" />
                 </svg>
+
+                <button onclick="event.stopPropagation(); toggleDebug()" class="absolute top-2 right-2 z-50 px-3 py-1 rounded text-xs font-bold border ${state.debugMode ? 'bg-red-600 text-white border-red-400' : 'bg-black/50 text-stone-400 border-stone-600'}">
+                    ${state.debugMode ? '🐞 DEBUG ON' : '🐞 DEBUG OFF'}
+                </button>
+
+                ${state.debugMode && state.lastDebugCoord ? `
+                    <div class="absolute top-12 right-2 z-50 bg-black/80 text-white p-2 rounded border border-white/20 text-xs font-mono">
+                        <div class="text-yellow-400 font-bold mb-1">COORDINATES FOUND:</div>
+                        <div>x: <span class="text-green-400 text-lg">${state.lastDebugCoord.x}</span></div>
+                        <div>y: <span class="text-green-400 text-lg">${state.lastDebugCoord.y}</span></div>
+                        <div class="mt-1 text-[10px] text-stone-400">Update PORTS array with these!</div>
+                    </div>
+                    <div class="absolute w-4 h-4 rounded-full border-2 border-red-500 bg-red-500/50 z-40 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                         style="left: ${state.lastDebugCoord.x}%; top: ${state.lastDebugCoord.y}%;">
+                    </div>
+                ` : ''}
             `;
 
             PORTS.forEach((port, idx) => {
@@ -250,13 +265,18 @@
                 const dir = idx > currentIdx ? 'east' : 'west';
                 const reachable = isCurrent || dir === wind;
                 
+                // If Debugging, show all ports fully visible so we can see if they align
+                const opacity = state.debugMode ? 'opacity-100' : (reachable ? 'opacity-100' : 'opacity-50 grayscale');
+
                 html += `
-                <div onclick="${reachable ? `actionTravel('${port.id}')` : ''}" 
-                     class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 transition-all ${reachable ? 'cursor-pointer hover:scale-110' : 'opacity-50 grayscale'}"
+                <div onclick="actionTravel(event, '${port.id}')" 
+                     class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 transition-all ${opacity} ${state.debugMode ? 'pointer-events-none' : 'cursor-pointer hover:scale-110'}"
                      style="left: ${port.x}%; top: ${port.y}%;">
-                    ${reachable && !isCurrent ? '<div class="absolute -inset-4 rounded-full border-2 border-green-400 animate-ping opacity-50 pointer-events-none"></div>' : ''}
+                    
+                    ${reachable && !isCurrent && !state.debugMode ? '<div class="absolute -inset-4 rounded-full border-2 border-green-400 animate-ping opacity-50 pointer-events-none"></div>' : ''}
+                    
                     <div class="p-2 rounded-full border-2 shadow-xl bg-stone-800 ${isCurrent ? 'border-blue-500 scale-125' : reachable ? 'border-green-500' : 'border-stone-600'}">
-                        ${isCurrent ? '<i data-lucide="ship" class="text-blue-400" width="20"></i>' : '<i data-lucide="anchor" class="'+(reachable?'text-green-400':'text-stone-500')+'" width="16"></i>'}
+                        <i data-lucide="${isCurrent ? 'ship' : 'anchor'}" class="${isCurrent ? 'text-blue-400' : (reachable ? 'text-green-400' : 'text-stone-500')}" width="${isCurrent ? 20 : 16}"></i>
                     </div>
                     <div class="mt-1 bg-black/80 px-2 py-0.5 rounded text-[9px] font-bold text-white whitespace-nowrap backdrop-blur-sm border border-white/10">
                         ${port.name}
@@ -264,11 +284,7 @@
                 </div>`;
             });
 
-            html += `<div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none z-30">
-                <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-black/80 backdrop-blur border ${wind === 'east' ? 'border-emerald-500 text-emerald-400' : 'border-orange-500 text-orange-400'}">
-                    ${wind === 'east' ? "Wind: EAST → (Go Asia)" : "Wind: WEST ← (Go Africa)"}
-                </span>
-            </div></div>`;
+            html += `</div>`;
             return html;
         }
 
@@ -294,7 +310,6 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto relative z-20 -mt-6 px-4 pb-4">
-                    
                     <div class="bg-white rounded-xl shadow-lg border border-stone-200 p-3 mb-4 flex gap-2">
                          <button onclick="actionWait('guard')" class="flex-1 bg-stone-50 border border-stone-200 rounded p-2 text-center hover:bg-blue-50">
                             <i data-lucide="shield" class="mx-auto text-stone-400 mb-1" width="16"></i>
@@ -310,12 +325,12 @@
 
                     <div class="bg-white rounded-xl shadow-lg border border-stone-200 overflow-hidden">
                         <div class="bg-stone-50 px-3 py-2 border-b border-stone-200 flex justify-between items-center">
-                            <span class="text-xs font-bold text-stone-500 uppercase">Market</span>
+                            <span class="text-xs font-bold text-stone-500 uppercase">Commodities</span>
                             <span class="text-[10px] text-stone-400">Hold: ${totalItems}/${MAX_INVENTORY}</span>
                         </div>
             `;
 
-            Object.keys(GOODS).forEach((key, idx) => {
+            Object.keys(GOODS).forEach((key) => {
                 const good = GOODS[key];
                 const p = prices[key];
                 const owned = state.inventory[key] || 0;
@@ -353,74 +368,35 @@
         function renderLog() {
             const container = document.getElementById('log-container');
             if(!container) return;
-            
             container.innerHTML = state.log.map(l => `
-                <div class="p-1.5 rounded border-l-2 mb-1 text-xs font-mono ${
-                    l.type === 'good' ? 'border-emerald-500 bg-emerald-900/10 text-emerald-800' :
-                    l.type === 'bad' ? 'border-red-500 bg-red-900/10 text-red-800' :
-                    l.type === 'event' ? 'border-purple-500 bg-purple-900/10 text-purple-800' :
-                    'border-stone-500 text-stone-500'
-                }">${l.text}</div>
+                <div class="p-1.5 rounded border-l-2 mb-1 text-xs font-mono ${l.type === 'good' ? 'border-emerald-500 bg-emerald-100' : l.type === 'bad' ? 'border-red-500 bg-red-100' : 'border-stone-400'}">${l.text}</div>
             `).join('');
         }
-
-        function renderEnd() {
-            return `
-            <div class="absolute inset-0 bg-stone-900 z-50 flex flex-col items-center justify-center text-white p-8 text-center">
-                <h1 class="text-3xl font-bold text-amber-400 mb-4">Retired</h1>
-                <p class="mb-8 text-stone-400">You reached age 50.</p>
-                <div class="text-xl mb-2">Final Wealth: <span class="text-yellow-400">${state.money}</span></div>
-                <div class="text-xl mb-8">Total Influence: <span class="text-blue-400">${Object.values(state.influence).reduce((a,b)=>a+b,0)}</span></div>
-                <button onclick="location.reload()" class="bg-emerald-600 px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform">Play Again</button>
-            </div>`;
-        }
-        
-        function renderTutorial() {
-            return `
-            <div class="absolute inset-0 bg-stone-900 z-50 flex flex-col items-center justify-center text-white p-8 text-center">
-                 <div class="bg-white rounded-xl max-w-xs w-full shadow-2xl overflow-hidden text-center text-stone-800">
-                    <div class="bg-blue-600 p-4 text-white">
-                        <h2 class="text-lg font-bold">Monsoon Mariner</h2>
-                    </div>
-                    <div class="p-5 space-y-4">
-                        <p class="text-sm">Sail with the wind to become a Merchant Prince.</p>
-                        <div class="text-xs bg-stone-100 p-3 rounded text-left space-y-2 border border-stone-200">
-                            <div><span class="text-emerald-600 font-bold">Summer (Apr-Sep):</span> Sail East →</div>
-                            <div><span class="text-orange-600 font-bold">Winter (Oct-Mar):</span> Sail West ←</div>
-                        </div>
-                        <button onclick="state.view='map'; render()" class="w-full bg-stone-800 text-white py-3 rounded-lg font-bold text-sm hover:bg-stone-700">Set Sail</button>
-                    </div>
-                </div>
-            </div>`;
-        }
-
-        // --- 6. MASTER RENDER ---
 
         function render() {
             const app = document.getElementById('game-app');
             let content = '';
-
-            if (state.view === 'tutorial') {
-                content = renderTutorial() + renderMap(); // Show map behind
-            } else if (state.view === 'end') {
-                content = renderEnd();
+            
+            if (state.view === 'end') {
+                content = `<div class="p-10 text-center flex flex-col justify-center h-full">
+                    <h1 class="text-3xl font-bold">The End</h1>
+                    <p class="mb-4">You retired at age 50.</p>
+                    <div class="text-xl">Wealth: ${state.money}</div>
+                    <button onclick="location.reload()" class="bg-blue-600 text-white p-3 rounded mt-4">Play Again</button>
+                </div>`;
             } else {
                 content = renderHeader();
                 content += `<div class="flex-1 overflow-hidden relative flex flex-col">
                     ${state.view === 'map' ? renderMap() : renderMarket()}
                 </div>`;
-                content += `<div class="h-32 bg-stone-100 border-t-4 border-stone-200 overflow-y-auto p-2 shrink-0 relative">
-                    <div class="absolute top-0 right-0 bg-stone-200 text-stone-500 text-[9px] px-1 rounded-bl">LOG</div>
-                    <div id="log-container"></div>
-                </div>`;
+                content += `<div class="h-32 bg-stone-100 border-t-4 border-stone-200 overflow-y-auto p-2 shrink-0" id="log-container"></div>`;
             }
 
             app.innerHTML = content;
             renderLog();
-            lucide.createIcons(); // Re-scan for icons
+            lucide.createIcons();
         }
 
-        // Init
         render();
 
     </script>
