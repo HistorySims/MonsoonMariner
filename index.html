@@ -1,404 +1,531 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monsoon Mariner (Debug Mode)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1c1917; }
-        ::-webkit-scrollbar-thumb { background: #44403c; border-radius: 3px; }
-        body { -webkit-user-select: none; user-select: none; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monsoon Mariner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1c1917; }
+    ::-webkit-scrollbar-thumb { background: #44403c; border-radius: 3px; }
+    body { -webkit-user-select: none; user-select: none; }
+  </style>
 </head>
+
 <body class="bg-stone-900 h-screen flex justify-center overflow-hidden font-sans text-stone-800">
+  <div id="game-app" class="w-full max-w-md bg-stone-100 shadow-2xl h-full flex flex-col relative"></div>
 
-    <div id="game-app" class="w-full max-w-md bg-stone-100 shadow-2xl h-full flex flex-col relative"></div>
+  <script>
+    // --- 1. CONFIGURATION ---
 
-    <script>
-        // --- 1. CONFIGURATION ---
-        
-        // 🛠️ UPDATE YOUR PORTS HERE AFTER USING DEBUG MODE
-        const PORTS = [
-            { id: 'kilwa', name: 'Kilwa', region: 'Africa', x: 20, y: 70, color: '#f59e0b', img: 'https://images.unsplash.com/photo-1523726491678-bf852e717f6a?auto=format&fit=crop&q=80&w=800' },
-            { id: 'aden', name: 'Aden', region: 'Arabia', x: 35, y: 35, color: '#ef4444', img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800' },
-            { id: 'calicut', name: 'Calicut', region: 'India', x: 60, y: 45, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1596401057633-565652b5e260?auto=format&fit=crop&q=80&w=800' },
-            { id: 'malacca', name: 'Malacca', region: 'SE Asia', x: 80, y: 65, color: '#10b981', img: 'https://images.unsplash.com/photo-1534234828569-1f3553dadd3d?auto=format&fit=crop&q=80&w=800' },
-            { id: 'hangzhou', name: 'Hangzhou', region: 'China', x: 90, y: 15, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1537249011568-1eb6e6c8914b?auto=format&fit=crop&q=80&w=800' },
-        ];
+    // ✅ PORTS UPDATED (and debug removed)
+    const PORTS = [
+      { id: 'kilwa',   name: 'Kilwa',   region: 'Africa',  x: 15, y: 77, color: '#f59e0b', img: 'https://images.unsplash.com/photo-1523726491678-bf852e717f6a?auto=format&fit=crop&q=80&w=800' },
+      { id: 'aden',    name: 'Aden',    region: 'Arabia',  x: 18, y: 46, color: '#ef4444', img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800' },
+      { id: 'calicut', name: 'Calicut', region: 'India',   x: 47, y: 50, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1596401057633-565652b5e260?auto=format&fit=crop&q=80&w=800' },
+      { id: 'malacca', name: 'Malacca', region: 'SE Asia', x: 71, y: 60, color: '#10b981', img: 'https://images.unsplash.com/photo-1534234828569-1f3553dadd3d?auto=format&fit=crop&q=80&w=800' },
+      { id: 'hangzhou', name: 'Hangzhou', region: 'China', x: 88, y: 22, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1537249011568-1eb6e6c8914b?auto=format&fit=crop&q=80&w=800' },
+    ];
 
-        const GOODS = {
-            iron: { name: 'Iron', basePrice: 10, icon: '⛏️' },
-            ivory: { name: 'Ivory', basePrice: 50, icon: '🐘' },
-            spices: { name: 'Spices', basePrice: 40, icon: '🌶️' },
-            silk: { name: 'Silk', basePrice: 80, icon: '👘' },
-            porcelain: { name: 'Porcelain', basePrice: 100, icon: '🏺' },
+    const GOODS = {
+      iron:      { name: 'Iron',      basePrice: 10,  icon: '⛏️' },
+      ivory:     { name: 'Ivory',     basePrice: 50,  icon: '🐘' },
+      spices:    { name: 'Spices',    basePrice: 40,  icon: '🌶️' },
+      silk:      { name: 'Silk',      basePrice: 80,  icon: '👘' },
+      porcelain: { name: 'Porcelain', basePrice: 100, icon: '🏺' },
+    };
+
+    const ECONOMY = {
+      kilwa:    { iron: 1.2, ivory: 0.3, spices: 1.5, silk: 2.0, porcelain: 2.5 },
+      aden:     { iron: 0.8, ivory: 1.2, spices: 1.0, silk: 1.5, porcelain: 2.0 },
+      calicut:  { iron: 1.0, ivory: 1.5, spices: 0.2, silk: 1.2, porcelain: 1.5 },
+      malacca:  { iron: 1.2, ivory: 1.8, spices: 0.4, silk: 0.8, porcelain: 1.2 },
+      hangzhou: { iron: 1.0, ivory: 2.5, spices: 2.0, silk: 0.3, porcelain: 0.2 },
+    };
+
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const MAX_INVENTORY = 15;
+    const END_AGE = 50;
+
+    // --- 2. STATE ---
+    let state = {
+      view: 'map',
+      currentPortId: 'calicut',
+      month: 0,
+      year: 1200,
+      age: 20,
+      money: 120,
+      inventory: {},
+      influence: { kilwa:0, aden:0, calicut:0, malacca:0, hangzhou:0 },
+      log: [{ text: "The monsoon calendar is your compass. The market is your battlefield.", type: "neutral" }],
+      activeEvents: [] // [{ text, effects, ttl }]
+    };
+
+    // --- 3. FLAVOR & EVENTS ---
+
+    // ✅ “Markets shift due to storms” replaced with a long, better list (and actual effects)
+    const MARKET_RUMORS = [
+      { text: "A pirate league is taking 'insurance' off the Malacca Strait. Everyone pretends it's a tax.", effects: { malacca: { spices: 1.25, ivory: 1.15 } } },
+      { text: "Aden’s warehouses are bursting after an early caravan season. Buyers get picky.", effects: { aden: { iron: 0.90, silk: 0.92 } } },
+      { text: "A Kilwa ivory guild declares a 'purity standard' and rejects half the shipments. Prices jump anyway.", effects: { kilwa: { ivory: 1.35 } } },
+      { text: "Calicut’s spice brokers are feuding. Two price sheets circulate, neither is honest.", effects: { calicut: { spices: 1.30 } } },
+      { text: "Hangzhou artisans unveil a new glaze craze. Porcelain moves like contraband.", effects: { hangzhou: { porcelain: 1.28 } } },
+      { text: "Aden’s harbor master starts enforcing 'dock gifts.' Everything costs a little more to move.", effects: { aden: { iron: 1.08, ivory: 1.08, spices: 1.08, silk: 1.08, porcelain: 1.08 } } },
+      { text: "A Malacca merchant-prince bankrolls silk showcases. Everyone suddenly 'needs' silk.", effects: { malacca: { silk: 1.22 } } },
+      { text: "A storm wrecks a porcelain convoy in the South China Sea. Survivors sell shards like relics.", effects: { kilwa: { porcelain: 1.18 }, aden: { porcelain: 1.18 }, calicut: { porcelain: 1.18 }, malacca: { porcelain: 1.18 } } },
+      { text: "A new iron vein is rumored near the African coast. Traders gamble early.", effects: { kilwa: { iron: 0.88 } } },
+      { text: "Ivory routes shift inland; escorts demand hazard pay. The tusks arrive… slowly.", effects: { aden: { ivory: 1.20 }, calicut: { ivory: 1.20 }, malacca: { ivory: 1.20 } } },
+      { text: "Calicut scribes publish a 'fair weights' pamphlet. Honest scales become fashionable overnight.", effects: { calicut: { iron: 0.95, spices: 0.95, silk: 0.95 } } },
+      { text: "Aden’s court hosts a diplomatic feast. Gift silk and spice disappear into sleeves.", effects: { aden: { silk: 1.18, spices: 1.12 } } },
+      { text: "Kilwa’s docks close for a ritual week. The few open stalls name their price.", effects: { kilwa: { iron: 1.12, ivory: 1.18, spices: 1.10 } } },
+      { text: "A Malacca customs official is replaced. The new one smiles too much—fees become 'negotiable.'", effects: { malacca: { spices: 0.92, silk: 0.95 } } },
+      { text: "Hangzhou river barges run late. Porcelain sits inland, and city buyers get restless.", effects: { hangzhou: { porcelain: 1.22 } } },
+      { text: "Aden’s moneychangers tighten credit. Buyers hesitate; sellers blink first.", effects: { aden: { ivory: 0.93, spices: 0.93, silk: 0.93 } } },
+      { text: "Calicut’s monsoon festival sparks a buying frenzy. Spices move fast, and so do rumors.", effects: { calicut: { spices: 1.20, silk: 1.08 } } },
+      { text: "Kilwa’s shipwrights demand iron. Hammer-rings echo across the harbor.", effects: { kilwa: { iron: 1.25 } } },
+      { text: "A Malacca spice scandal: sacks cut with grit. Clean product fetches a premium.", effects: { malacca: { spices: 1.18 } } },
+      { text: "Hangzhou magistrates crackdown on 'luxury hoarding.' The black market does the opposite.", effects: { hangzhou: { silk: 1.12, porcelain: 1.12 } } },
+      { text: "Aden’s pearl divers strike. Ivory becomes the flashy substitute.", effects: { aden: { ivory: 1.15 } } },
+      { text: "Calicut’s sea captains boycott one broker. Everyone else profits from the chaos.", effects: { calicut: { iron: 1.08, spices: 1.12 } } },
+      { text: "Kilwa’s ivory carvers debut a new style. Tusks become art; art becomes money.", effects: { kilwa: { ivory: 1.25 } } },
+      { text: "Malacca hears a war rumor up the peninsula. Silk and iron get hoarded 'just in case.'", effects: { malacca: { silk: 1.18, iron: 1.10 } } },
+      { text: "Hangzhou’s porcelain kilns burn hotter than usual. The quality is terrifying. So is the price.", effects: { hangzhou: { porcelain: 1.35 } } },
+      { text: "Aden’s spice quarter catches fire—but the surviving stores sell like kings.", effects: { aden: { spices: 1.28 } } },
+      { text: "Calicut’s pepper harvest is legendary this year. Buyers swagger; sellers grin.", effects: { calicut: { spices: 0.85 } } },
+      { text: "Kilwa’s caravan masters arrive early with unexpected iron. The market exhales.", effects: { kilwa: { iron: 0.90 } } }
+    ];
+
+    // ✅ New action labels + logs (positive & negative variety)
+    const ENCLAVE_LOGS = {
+      good: [
+        "You tally cargo for a guild factor. He pays on time and vouches for you.",
+        "A shipwright hires you to guard a new hull overnight. You earn coin and quiet respect.",
+        "You translate for a captain with a cracked map. Word spreads: you’re useful.",
+        "You help settle a dispute without drawing steel. The enclave remembers restraint.",
+        "A patron tips you for discretion. In this trade, silence is a skill."
+      ],
+      bad: [
+        "A petty officer skims your pay. You notice too late—everyone shrugs.",
+        "A drunken sailor picks a fight. You win, but the paymaster docks your wages for the mess.",
+        "You get blamed for someone else’s missing rope. The enclave pays you anyway… less.",
+        "A foreman 'forgets' your name at payday. You get coin, plus a lesson.",
+        "You stand watch in bad weather and lose a day to fever. The work still gets done."
+      ]
+    };
+
+    const LOCALS_LOGS = {
+      good: [
+        "You share tea with a dock family. The next day, brokers greet you by name.",
+        "A local guide shows you the honest stalls. You avoid the tourist prices.",
+        "You learn a proverb that opens doors. People laugh, then listen.",
+        "You sponsor a small feast. A respected elder calls you 'steady.' Influence rises.",
+        "A musician dedicates a song to your voyage. Suddenly your face is familiar.",
+        "You return a lost purse. The rumor becomes: 'This one can be trusted.'"
+      ],
+      bad: [
+        "You back the wrong storyteller in a tavern dispute. Half the room turns cold.",
+        "A vendor sells you 'rare spice' that’s mostly dried leaves. Embarrassing.",
+        "You misread a gesture and offend a minor official. The apology costs extra.",
+        "A pickpocket finds you during the crowd. You learn the city’s lesson fast.",
+        "You get dragged into local politics you don’t understand. Someone smiles while you lose face."
+      ]
+    };
+
+    // --- 4. LOGIC ---
+
+    function getWindDirection() {
+      return (state.month >= 3 && state.month <= 8) ? 'east' : 'west';
+    }
+
+    function getCurrentPort() {
+      return PORTS.find(p => p.id === state.currentPortId);
+    }
+
+    function tickEvents() {
+      // Decrement TTL and remove expired
+      state.activeEvents = state.activeEvents
+        .map(ev => ({ ...ev, ttl: ev.ttl - 1 }))
+        .filter(ev => ev.ttl > 0);
+    }
+
+    function maybeAddMarketEvent() {
+      if (Math.random() >= 0.35) return;
+
+      const rumor = MARKET_RUMORS[Math.floor(Math.random() * MARKET_RUMORS.length)];
+      state.activeEvents.push({
+        text: rumor.text,
+        effects: rumor.effects,
+        ttl: 2 // lasts this month + next month
+      });
+      state.log.unshift({ text: `🗞️ ${rumor.text}`, type: "event" });
+    }
+
+    function getPrices() {
+      const port = state.currentPortId;
+      const influence = state.influence[port];
+
+      const buyMod  = 1.20 - (influence * 0.003);
+      const sellMod = 0.80 + (influence * 0.003);
+
+      // Collect multipliers from active events affecting this port
+      const eventMultipliers = {};
+      state.activeEvents.forEach(ev => {
+        if (ev.effects && ev.effects[port]) Object.assign(eventMultipliers, ev.effects[port]);
+      });
+
+      const prices = {};
+      Object.keys(GOODS).forEach(key => {
+        const base = GOODS[key].basePrice;
+        const localMult = ECONOMY[port][key];
+        const eventMult = eventMultipliers[key] || 1.0;
+
+        prices[key] = {
+          buy:  Math.max(1, Math.floor(base * localMult * eventMult * buyMod)),
+          sell: Math.max(1, Math.floor(base * localMult * eventMult * sellMod)),
+          dealText: influence < 30 ? "Stranger" : (influence > 80 ? "Family" : "Partner")
         };
+      });
 
-        const ECONOMY = {
-            kilwa: { iron: 1.2, ivory: 0.3, spices: 1.5, silk: 2.0, porcelain: 2.5 },
-            aden: { iron: 0.8, ivory: 1.2, spices: 1.0, silk: 1.5, porcelain: 2.0 },
-            calicut: { iron: 1.0, ivory: 1.5, spices: 0.2, silk: 1.2, porcelain: 1.5 },
-            malacca: { iron: 1.2, ivory: 1.8, spices: 0.4, silk: 0.8, porcelain: 1.2 },
-            hangzhou: { iron: 1.0, ivory: 2.5, spices: 2.0, silk: 0.3, porcelain: 0.2 },
-        };
+      return prices;
+    }
 
-        const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const MAX_INVENTORY = 15;
-        const END_AGE = 50;
+    function advanceTime(months) {
+      for (let i = 0; i < months; i++) {
+        // month/year
+        state.month += 1;
+        if (state.month > 11) { state.month = 0; state.year += 1; }
+        state.age += (1 / 12);
 
-        // --- 2. STATE ---
-        let state = {
-            view: 'map', // Start directly on map for debugging
-            debugMode: false,
-            lastDebugCoord: null, // Stores {x, y} of last click
-            currentPortId: 'calicut',
-            month: 0,
-            year: 1200,
-            age: 20,
-            money: 120,
-            inventory: {},
-            influence: { kilwa:0, aden:0, calicut:0, malacca:0, hangzhou:0 },
-            log: [{ text: "Welcome.", type: "neutral" }],
-            activeEvents: []
-        };
+        // tick old events, add new ones
+        tickEvents();
+        maybeAddMarketEvent();
+      }
 
-        // --- 3. LOGIC ---
-        
-        function getWindDirection() {
-            return (state.month >= 3 && state.month <= 8) ? 'east' : 'west';
-        }
+      if (state.age >= END_AGE) state.view = 'end';
+      render();
+    }
 
-        function getCurrentPort() {
-            return PORTS.find(p => p.id === state.currentPortId);
-        }
+    // --- 5. INTERACTION ---
 
-        function getPrices() {
-            const port = state.currentPortId;
-            const inf = state.influence[port];
-            const buyMod = 1.2 - (inf * 0.003); 
-            const sellMod = 0.8 + (inf * 0.003);
-            
-            let prices = {};
-            const eventMultipliers = {};
-            state.activeEvents.forEach(ev => {
-                if (ev.effects[port]) Object.assign(eventMultipliers, ev.effects[port]);
-            });
+    function actionTravel(e, targetId) {
+      e.stopPropagation();
 
-            Object.keys(GOODS).forEach(key => {
-                const base = GOODS[key].basePrice;
-                const localMult = ECONOMY[port][key];
-                const eventMult = eventMultipliers[key] || 1.0;
-                prices[key] = {
-                    buy: Math.floor(base * localMult * eventMult * buyMod),
-                    sell: Math.floor(base * localMult * eventMult * sellMod),
-                    dealText: inf < 30 ? "Stranger" : (inf > 80 ? "Family" : "Partner")
-                };
-            });
-            return prices;
-        }
-
-        function advanceTime(months) {
-            let newMonth = state.month + months;
-            let yearAdd = 0;
-            while (newMonth > 11) { newMonth -= 12; yearAdd++; }
-            state.month = newMonth;
-            state.year += yearAdd;
-            state.age += (months / 12);
-            
-            // Random Event
-            if(Math.random() < 0.35) {
-                state.log.unshift({text: "Markets shift due to storms.", type: "event"});
-            } else {
-                state.activeEvents = [];
-            }
-
-            if(state.age >= END_AGE) state.view = 'end';
-            render();
-        }
-
-        // --- 4. DEBUG & INTERACTION ---
-
-        function toggleDebug() {
-            state.debugMode = !state.debugMode;
-            state.lastDebugCoord = null;
-            render();
-        }
-
-        // 🎯 THE MAGIC FUNCTION: Gets coordinates on click
-        function handleMapClick(e) {
-            // If we are in debug mode, calculate coordinates
-            if (state.debugMode) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                // Calculate percentage relative to the container
-                const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-                const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
-                
-                state.lastDebugCoord = { x, y };
-                render(); // Re-render to show the red dot and numbers
-                return; // Stop normal travel logic
-            }
-        }
-
-        function actionTravel(e, targetId) {
-            if (state.debugMode) return; // Disable travel while debugging
-            e.stopPropagation(); // Stop click from bubbling
-
-            if(targetId === state.currentPortId) {
-                state.view = 'market';
-                render();
-                return;
-            }
-            const currentIdx = PORTS.findIndex(p => p.id === state.currentPortId);
-            const targetIdx = PORTS.findIndex(p => p.id === targetId);
-            const dir = targetIdx > currentIdx ? 'east' : 'west';
-            const wind = getWindDirection();
-
-            if(dir !== wind) {
-                state.log.unshift({text: `Wind is blowing ${wind}!`, type: 'bad'});
-                render();
-                return;
-            }
-
-            state.currentPortId = targetId;
-            state.view = 'market';
-            state.log.unshift({text: `Arrived at ${PORTS[targetIdx].name}`, type: 'good'});
-            advanceTime(1);
-        }
-
-        function actionTrade(item, isBuy) {
-            const prices = getPrices();
-            const price = isBuy ? prices[item].buy : prices[item].sell;
-            const totalItems = Object.values(state.inventory).reduce((a,b)=>a+b,0);
-            const owned = state.inventory[item] || 0;
-
-            if(isBuy) {
-                if(state.money >= price && totalItems < MAX_INVENTORY) {
-                    state.money -= price;
-                    state.inventory[item] = owned + 1;
-                }
-            } else {
-                if(owned > 0) {
-                    state.money += price;
-                    state.inventory[item] = owned - 1;
-                }
-            }
-            render();
-        }
-
-        function actionWait(type) {
-            if(type === 'guard') {
-                state.money += 10;
-            } else {
-                if(state.money >= 15) {
-                    state.money -= 15;
-                    state.influence[state.currentPortId] = Math.min(100, state.influence[state.currentPortId] + 15);
-                }
-            }
-            advanceTime(1);
-        }
-
-        // --- 5. RENDERERS ---
-
-        function renderHeader() {
-            const wind = getWindDirection();
-            return `
-            <div class="bg-stone-900 text-stone-100 p-2 flex justify-between items-center h-14 shrink-0 z-30 shadow-md">
-                <div class="flex items-center gap-4">
-                    <div class="leading-tight">
-                        <div class="text-[10px] text-stone-400">DATE</div>
-                        <div class="font-bold text-sm">${MONTHS[state.month]} ${state.year}</div>
-                    </div>
-                    <div class="leading-tight">
-                        <div class="text-[10px] text-stone-400">WIND</div>
-                        <div class="font-bold text-xs ${wind==='east'?'text-emerald-400':'text-orange-400'}">
-                            ${wind==='east' ? 'EAST →' : '← WEST'}
-                        </div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                     <div class="text-right mr-2">
-                        <div class="text-[10px] text-stone-400">GOLD</div>
-                        <div class="font-mono text-yellow-400 font-bold">${state.money}</div>
-                     </div>
-                </div>
-            </div>`;
-        }
-
-        function renderMap() {
-            const wind = getWindDirection();
-            let html = `<div class="w-full h-full relative bg-[#1e293b] overflow-hidden cursor-crosshair" onclick="handleMapClick(event)">
-                
-                <img src="./IMG_4324.png" class="absolute inset-0 w-full h-full object-fill z-0" onerror="alert('Error: IMG_4324.png not found!')">
-
-                <svg class="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-50">
-                    <defs>
-                        <pattern id="windPat" width="100" height="20" patternUnits="userSpaceOnUse">
-                             <path d="M 10 10 Q 50 ${wind === 'east' ? 5 : 15} 90 10" fill="none" stroke="${wind === 'east' ? '#10b981' : '#f97316'}" stroke-width="0.5" stroke-dasharray="2 2" />
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#windPat)" />
-                </svg>
-
-                <button onclick="event.stopPropagation(); toggleDebug()" class="absolute top-2 right-2 z-50 px-3 py-1 rounded text-xs font-bold border ${state.debugMode ? 'bg-red-600 text-white border-red-400' : 'bg-black/50 text-stone-400 border-stone-600'}">
-                    ${state.debugMode ? '🐞 DEBUG ON' : '🐞 DEBUG OFF'}
-                </button>
-
-                ${state.debugMode && state.lastDebugCoord ? `
-                    <div class="absolute top-12 right-2 z-50 bg-black/80 text-white p-2 rounded border border-white/20 text-xs font-mono">
-                        <div class="text-yellow-400 font-bold mb-1">COORDINATES FOUND:</div>
-                        <div>x: <span class="text-green-400 text-lg">${state.lastDebugCoord.x}</span></div>
-                        <div>y: <span class="text-green-400 text-lg">${state.lastDebugCoord.y}</span></div>
-                        <div class="mt-1 text-[10px] text-stone-400">Update PORTS array with these!</div>
-                    </div>
-                    <div class="absolute w-4 h-4 rounded-full border-2 border-red-500 bg-red-500/50 z-40 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                         style="left: ${state.lastDebugCoord.x}%; top: ${state.lastDebugCoord.y}%;">
-                    </div>
-                ` : ''}
-            `;
-
-            PORTS.forEach((port, idx) => {
-                const isCurrent = state.currentPortId === port.id;
-                const currentIdx = PORTS.findIndex(p => p.id === state.currentPortId);
-                const dir = idx > currentIdx ? 'east' : 'west';
-                const reachable = isCurrent || dir === wind;
-                
-                // If Debugging, show all ports fully visible so we can see if they align
-                const opacity = state.debugMode ? 'opacity-100' : (reachable ? 'opacity-100' : 'opacity-50 grayscale');
-
-                html += `
-                <div onclick="actionTravel(event, '${port.id}')" 
-                     class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 transition-all ${opacity} ${state.debugMode ? 'pointer-events-none' : 'cursor-pointer hover:scale-110'}"
-                     style="left: ${port.x}%; top: ${port.y}%;">
-                    
-                    ${reachable && !isCurrent && !state.debugMode ? '<div class="absolute -inset-4 rounded-full border-2 border-green-400 animate-ping opacity-50 pointer-events-none"></div>' : ''}
-                    
-                    <div class="p-2 rounded-full border-2 shadow-xl bg-stone-800 ${isCurrent ? 'border-blue-500 scale-125' : reachable ? 'border-green-500' : 'border-stone-600'}">
-                        <i data-lucide="${isCurrent ? 'ship' : 'anchor'}" class="${isCurrent ? 'text-blue-400' : (reachable ? 'text-green-400' : 'text-stone-500')}" width="${isCurrent ? 20 : 16}"></i>
-                    </div>
-                    <div class="mt-1 bg-black/80 px-2 py-0.5 rounded text-[9px] font-bold text-white whitespace-nowrap backdrop-blur-sm border border-white/10">
-                        ${port.name}
-                    </div>
-                </div>`;
-            });
-
-            html += `</div>`;
-            return html;
-        }
-
-        function renderMarket() {
-            const port = getCurrentPort();
-            const prices = getPrices();
-            const totalItems = Object.values(state.inventory).reduce((a,b)=>a+b,0);
-            
-            let html = `
-            <div class="flex-1 bg-stone-100 flex flex-col relative overflow-hidden h-full">
-                <div class="h-[35%] w-full relative shrink-0 bg-stone-800">
-                    <img src="${port.img}" class="w-full h-full object-cover opacity-90">
-                    <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-stone-100"></div>
-                    <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-white z-10">
-                        <button onclick="state.view='map'; render()" class="bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-black/60">
-                            <i data-lucide="chevron-left" width="14"></i> <span class="text-xs font-bold">Map</span>
-                        </button>
-                        <div class="bg-black/40 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl text-center">
-                            <h2 class="text-xl font-bold leading-none shadow-black drop-shadow-lg">${port.name}</h2>
-                            <div class="text-[10px] uppercase tracking-wider text-stone-200 mt-1">Infl: ${state.influence[port.id]}%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex-1 overflow-y-auto relative z-20 -mt-6 px-4 pb-4">
-                    <div class="bg-white rounded-xl shadow-lg border border-stone-200 p-3 mb-4 flex gap-2">
-                         <button onclick="actionWait('guard')" class="flex-1 bg-stone-50 border border-stone-200 rounded p-2 text-center hover:bg-blue-50">
-                            <i data-lucide="shield" class="mx-auto text-stone-400 mb-1" width="16"></i>
-                            <div class="text-xs font-bold text-stone-700">Enclave</div>
-                            <div class="text-[9px] text-stone-400">+10g</div>
-                         </button>
-                         <button onclick="actionWait('social')" class="flex-1 bg-stone-50 border border-stone-200 rounded p-2 text-center hover:bg-purple-50">
-                            <i data-lucide="users" class="mx-auto text-purple-400 mb-1" width="16"></i>
-                            <div class="text-xs font-bold text-stone-700">Court</div>
-                            <div class="text-[9px] text-stone-400">-15g / +Infl</div>
-                         </button>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-lg border border-stone-200 overflow-hidden">
-                        <div class="bg-stone-50 px-3 py-2 border-b border-stone-200 flex justify-between items-center">
-                            <span class="text-xs font-bold text-stone-500 uppercase">Commodities</span>
-                            <span class="text-[10px] text-stone-400">Hold: ${totalItems}/${MAX_INVENTORY}</span>
-                        </div>
-            `;
-
-            Object.keys(GOODS).forEach((key) => {
-                const good = GOODS[key];
-                const p = prices[key];
-                const owned = state.inventory[key] || 0;
-                const canBuy = state.money >= p.buy && totalItems < MAX_INVENTORY;
-                
-                html += `
-                <div class="p-3 flex items-center justify-between border-b border-stone-100">
-                    <div class="flex items-center gap-3">
-                        <div class="text-2xl">${good.icon}</div>
-                        <div>
-                            <div class="font-bold text-stone-800 text-sm">${good.name}</div>
-                            <div class="text-[10px] text-stone-400">${p.dealText}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="actionTrade('${key}', true)" ${!canBuy ? 'disabled' : ''} 
-                            class="w-12 py-1 rounded text-center border transition-all active:scale-95 ${canBuy ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-stone-50 border-stone-100 text-stone-300 opacity-50'}">
-                            <div class="text-[8px] font-bold uppercase">Buy</div>
-                            <div class="text-xs font-bold">${p.buy}</div>
-                        </button>
-                        <button onclick="actionTrade('${key}', false)" ${owned===0 ? 'disabled' : ''} 
-                            class="w-12 py-1 rounded text-center border transition-all active:scale-95 relative ${owned>0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-stone-50 border-stone-100 text-stone-300 opacity-50'}">
-                            <div class="text-[8px] font-bold uppercase">Sell</div>
-                            <div class="text-xs font-bold">${p.sell}</div>
-                            ${owned > 0 ? `<div class="absolute -top-2 -right-2 bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm border border-white">${owned}</div>` : ''}
-                        </button>
-                    </div>
-                </div>`;
-            });
-
-            html += `</div></div></div>`;
-            return html;
-        }
-
-        function renderLog() {
-            const container = document.getElementById('log-container');
-            if(!container) return;
-            container.innerHTML = state.log.map(l => `
-                <div class="p-1.5 rounded border-l-2 mb-1 text-xs font-mono ${l.type === 'good' ? 'border-emerald-500 bg-emerald-100' : l.type === 'bad' ? 'border-red-500 bg-red-100' : 'border-stone-400'}">${l.text}</div>
-            `).join('');
-        }
-
-        function render() {
-            const app = document.getElementById('game-app');
-            let content = '';
-            
-            if (state.view === 'end') {
-                content = `<div class="p-10 text-center flex flex-col justify-center h-full">
-                    <h1 class="text-3xl font-bold">The End</h1>
-                    <p class="mb-4">You retired at age 50.</p>
-                    <div class="text-xl">Wealth: ${state.money}</div>
-                    <button onclick="location.reload()" class="bg-blue-600 text-white p-3 rounded mt-4">Play Again</button>
-                </div>`;
-            } else {
-                content = renderHeader();
-                content += `<div class="flex-1 overflow-hidden relative flex flex-col">
-                    ${state.view === 'map' ? renderMap() : renderMarket()}
-                </div>`;
-                content += `<div class="h-32 bg-stone-100 border-t-4 border-stone-200 overflow-y-auto p-2 shrink-0" id="log-container"></div>`;
-            }
-
-            app.innerHTML = content;
-            renderLog();
-            lucide.createIcons();
-        }
-
+      if (targetId === state.currentPortId) {
+        state.view = 'market';
         render();
+        return;
+      }
 
-    </script>
+      const currentIdx = PORTS.findIndex(p => p.id === state.currentPortId);
+      const targetIdx  = PORTS.findIndex(p => p.id === targetId);
+      const dir = targetIdx > currentIdx ? 'east' : 'west';
+      const wind = getWindDirection();
+
+      if (dir !== wind) {
+        state.log.unshift({ text: `⛵ The wind favors ${wind.toUpperCase()} travel right now.`, type: 'bad' });
+        render();
+        return;
+      }
+
+      state.currentPortId = targetId;
+      state.view = 'market';
+      state.log.unshift({ text: `✅ You make port at ${PORTS[targetIdx].name}.`, type: 'good' });
+      advanceTime(1);
+    }
+
+    function actionTrade(item, isBuy) {
+      const prices = getPrices();
+      const price = isBuy ? prices[item].buy : prices[item].sell;
+
+      const totalItems = Object.values(state.inventory).reduce((a,b)=>a+b,0);
+      const owned = state.inventory[item] || 0;
+
+      if (isBuy) {
+        if (state.money >= price && totalItems < MAX_INVENTORY) {
+          state.money -= price;
+          state.inventory[item] = owned + 1;
+        } else {
+          state.log.unshift({ text: "Not enough gold or cargo space.", type: "bad" });
+        }
+      } else {
+        if (owned > 0) {
+          state.money += price;
+          state.inventory[item] = owned - 1;
+        } else {
+          state.log.unshift({ text: "You have none to sell.", type: "bad" });
+        }
+      }
+
+      render();
+    }
+
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    // ✅ Enclave -> “Work in Enclave” / Court -> “Mingle with Locals”
+    // ✅ Adds positive & negative logs for both
+    function actionWait(type) {
+      const portName = getCurrentPort().name;
+
+      if (type === 'enclave') {
+        // Base: +10g, with small chance of a complication
+        let pay = 10;
+        const roll = Math.random();
+
+        if (roll < 0.20) {
+          // small setback
+          pay = 6;
+          state.log.unshift({ text: `⚓ ${pick(ENCLAVE_LOGS.bad)} (+${pay}g)`, type: "bad" });
+        } else {
+          state.log.unshift({ text: `⚓ ${pick(ENCLAVE_LOGS.good)} (+${pay}g)`, type: "good" });
+        }
+
+        state.money += pay;
+        advanceTime(1);
+        return;
+      }
+
+      if (type === 'locals') {
+        if (state.money < 15) {
+          state.log.unshift({ text: "You need 15g to host gifts, food, and introductions.", type: "bad" });
+          render();
+          return;
+        }
+
+        state.money -= 15;
+
+        // Outcome: mostly good, sometimes you step on a rake
+        const roll = Math.random();
+        if (roll < 0.70) {
+          const bonus = (Math.random() < 0.35) ? 5 : 0; // sometimes extra
+          const gain = 15 + bonus;
+          state.influence[state.currentPortId] = Math.min(100, state.influence[state.currentPortId] + gain);
+
+          state.log.unshift({
+            text: `🎭 In ${portName}: ${pick(LOCALS_LOGS.good)} (+${gain}% influence)`,
+            type: "good"
+          });
+        } else {
+          const penalty = (Math.random() < 0.5) ? 10 : 5;
+          state.influence[state.currentPortId] = Math.max(0, state.influence[state.currentPortId] - penalty);
+
+          // occasional extra cost (bribe/apology)
+          const extraCost = (Math.random() < 0.4) ? 10 : 0;
+          if (extraCost > 0 && state.money >= extraCost) state.money -= extraCost;
+
+          state.log.unshift({
+            text: `🎭 In ${portName}: ${pick(LOCALS_LOGS.bad)} (-${penalty}% influence${extraCost ? `, -${extraCost}g` : ""})`,
+            type: "bad"
+          });
+        }
+
+        advanceTime(1);
+        return;
+      }
+    }
+
+    // --- 6. RENDERERS ---
+
+    function renderHeader() {
+      const wind = getWindDirection();
+      return `
+        <div class="bg-stone-900 text-stone-100 p-2 flex justify-between items-center h-14 shrink-0 z-30 shadow-md">
+          <div class="flex items-center gap-4">
+            <div class="leading-tight">
+              <div class="text-[10px] text-stone-400">DATE</div>
+              <div class="font-bold text-sm">${MONTHS[state.month]} ${state.year}</div>
+            </div>
+            <div class="leading-tight">
+              <div class="text-[10px] text-stone-400">WIND</div>
+              <div class="font-bold text-xs ${wind==='east'?'text-emerald-400':'text-orange-400'}">
+                ${wind==='east' ? 'EAST →' : '← WEST'}
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="text-right mr-2">
+              <div class="text-[10px] text-stone-400">GOLD</div>
+              <div class="font-mono text-yellow-400 font-bold">${state.money}</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderMap() {
+      const wind = getWindDirection();
+      let html = `
+        <div class="w-full h-full relative bg-[#1e293b] overflow-hidden">
+          <img src="./IMG_4324.png" class="absolute inset-0 w-full h-full object-fill z-0" onerror="alert('Error: IMG_4324.png not found!')">
+
+          <svg class="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-50">
+            <defs>
+              <pattern id="windPat" width="100" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 10 10 Q 50 ${wind === 'east' ? 5 : 15} 90 10" fill="none"
+                      stroke="${wind === 'east' ? '#10b981' : '#f97316'}"
+                      stroke-width="0.5" stroke-dasharray="2 2" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#windPat)" />
+          </svg>
+      `;
+
+      PORTS.forEach((port, idx) => {
+        const isCurrent = state.currentPortId === port.id;
+        const currentIdx = PORTS.findIndex(p => p.id === state.currentPortId);
+        const dir = idx > currentIdx ? 'east' : 'west';
+        const reachable = isCurrent || dir === wind;
+
+        const opacity = reachable ? 'opacity-100' : 'opacity-50 grayscale';
+
+        html += `
+          <div onclick="actionTravel(event, '${port.id}')"
+               class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 transition-all ${opacity} cursor-pointer hover:scale-110"
+               style="left: ${port.x}%; top: ${port.y}%;">
+            ${reachable && !isCurrent ? '<div class="absolute -inset-4 rounded-full border-2 border-green-400 animate-ping opacity-50 pointer-events-none"></div>' : ''}
+
+            <div class="p-2 rounded-full border-2 shadow-xl bg-stone-800 ${isCurrent ? 'border-blue-500 scale-125' : reachable ? 'border-green-500' : 'border-stone-600'}">
+              <i data-lucide="${isCurrent ? 'ship' : 'anchor'}"
+                 class="${isCurrent ? 'text-blue-400' : (reachable ? 'text-green-400' : 'text-stone-500')}"
+                 width="${isCurrent ? 20 : 16}"></i>
+            </div>
+
+            <div class="mt-1 bg-black/80 px-2 py-0.5 rounded text-[9px] font-bold text-white whitespace-nowrap backdrop-blur-sm border border-white/10">
+              ${port.name}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      return html;
+    }
+
+    function renderMarket() {
+      const port = getCurrentPort();
+      const prices = getPrices();
+      const totalItems = Object.values(state.inventory).reduce((a,b)=>a+b,0);
+
+      let html = `
+        <div class="flex-1 bg-stone-100 flex flex-col relative overflow-hidden h-full">
+          <div class="h-[35%] w-full relative shrink-0 bg-stone-800">
+            <img src="${port.img}" class="w-full h-full object-cover opacity-90">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-stone-100"></div>
+            <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-white z-10">
+              <button onclick="state.view='map'; render()" class="bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-black/60">
+                <i data-lucide="chevron-left" width="14"></i> <span class="text-xs font-bold">Map</span>
+              </button>
+
+              <div class="bg-black/40 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl text-center">
+                <h2 class="text-xl font-bold leading-none shadow-black drop-shadow-lg">${port.name}</h2>
+                <div class="text-[10px] uppercase tracking-wider text-stone-200 mt-1">Influence: ${state.influence[port.id]}%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex-1 overflow-y-auto relative z-20 -mt-6 px-4 pb-4">
+            <div class="bg-white rounded-xl shadow-lg border border-stone-200 p-3 mb-4 flex gap-2">
+              <button onclick="actionWait('enclave')" class="flex-1 bg-stone-50 border border-stone-200 rounded p-2 text-center hover:bg-blue-50">
+                <i data-lucide="shield" class="mx-auto text-stone-400 mb-1" width="16"></i>
+                <div class="text-xs font-bold text-stone-700">Work in Enclave</div>
+                <div class="text-[9px] text-stone-400">+10g</div>
+              </button>
+
+              <button onclick="actionWait('locals')" class="flex-1 bg-stone-50 border border-stone-200 rounded p-2 text-center hover:bg-purple-50">
+                <i data-lucide="users" class="mx-auto text-purple-400 mb-1" width="16"></i>
+                <div class="text-xs font-bold text-stone-700">Mingle with Locals</div>
+                <div class="text-[9px] text-stone-400">-15g / +Influence</div>
+              </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg border border-stone-200 overflow-hidden">
+              <div class="bg-stone-50 px-3 py-2 border-b border-stone-200 flex justify-between items-center">
+                <span class="text-xs font-bold text-stone-500 uppercase">Commodities</span>
+                <span class="text-[10px] text-stone-400">Hold: ${totalItems}/${MAX_INVENTORY}</span>
+              </div>
+      `;
+
+      Object.keys(GOODS).forEach((key) => {
+        const good = GOODS[key];
+        const p = prices[key];
+        const owned = state.inventory[key] || 0;
+        const canBuy = state.money >= p.buy && totalItems < MAX_INVENTORY;
+
+        html += `
+          <div class="p-3 flex items-center justify-between border-b border-stone-100">
+            <div class="flex items-center gap-3">
+              <div class="text-2xl">${good.icon}</div>
+              <div>
+                <div class="font-bold text-stone-800 text-sm">${good.name}</div>
+                <div class="text-[10px] text-stone-400">${p.dealText}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="actionTrade('${key}', true)" ${!canBuy ? 'disabled' : ''}
+                class="w-12 py-1 rounded text-center border transition-all active:scale-95 ${canBuy ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-stone-50 border-stone-100 text-stone-300 opacity-50'}">
+                <div class="text-[8px] font-bold uppercase">Buy</div>
+                <div class="text-xs font-bold">${p.buy}</div>
+              </button>
+
+              <button onclick="actionTrade('${key}', false)" ${owned===0 ? 'disabled' : ''}
+                class="w-12 py-1 rounded text-center border transition-all active:scale-95 relative ${owned>0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-stone-50 border-stone-100 text-stone-300 opacity-50'}">
+                <div class="text-[8px] font-bold uppercase">Sell</div>
+                <div class="text-xs font-bold">${p.sell}</div>
+                ${owned > 0 ? `<div class="absolute -top-2 -right-2 bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm border border-white">${owned}</div>` : ''}
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div></div></div>`;
+      return html;
+    }
+
+    function renderLog() {
+      const container = document.getElementById('log-container');
+      if (!container) return;
+
+      container.innerHTML = state.log.map(l => `
+        <div class="p-1.5 rounded border-l-2 mb-1 text-xs font-mono ${
+          l.type === 'good' ? 'border-emerald-500 bg-emerald-100' :
+          l.type === 'bad'  ? 'border-red-500 bg-red-100' :
+          l.type === 'event' ? 'border-purple-500 bg-purple-100' :
+          'border-stone-400'
+        }">${l.text}</div>
+      `).join('');
+    }
+
+    function render() {
+      const app = document.getElementById('game-app');
+      let content = '';
+
+      if (state.view === 'end') {
+        content = `
+          <div class="p-10 text-center flex flex-col justify-center h-full">
+            <h1 class="text-3xl font-bold">The End</h1>
+            <p class="mb-4">You retired at age 50.</p>
+            <div class="text-xl">Wealth: ${state.money}</div>
+            <button onclick="location.reload()" class="bg-blue-600 text-white p-3 rounded mt-4">Play Again</button>
+          </div>
+        `;
+      } else {
+        content = renderHeader();
+        content += `
+          <div class="flex-1 overflow-hidden relative flex flex-col">
+            ${state.view === 'map' ? renderMap() : renderMarket()}
+          </div>
+        `;
+        content += `<div class="h-32 bg-stone-100 border-t-4 border-stone-200 overflow-y-auto p-2 shrink-0" id="log-container"></div>`;
+      }
+
+      app.innerHTML = content;
+      renderLog();
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
 </body>
 </html>
