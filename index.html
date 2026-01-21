@@ -2,31 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monsoon Mariner (Debug Mode)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Monsoon Mariner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        ::-webkit-scrollbar { width: 6px; }
+        /* Mobile polish */
+        body { -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #1c1917; }
-        ::-webkit-scrollbar-thumb { background: #44403c; border-radius: 3px; }
-        body { -webkit-user-select: none; user-select: none; }
+        ::-webkit-scrollbar-thumb { background: #44403c; border-radius: 2px; }
+        .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body class="bg-stone-900 h-screen flex justify-center overflow-hidden font-sans text-stone-800">
+<body class="bg-stone-950 h-[100dvh] flex justify-center overflow-hidden font-sans text-stone-800">
 
-    <div id="game-app" class="w-full max-w-md bg-stone-100 shadow-2xl h-full flex flex-col relative"></div>
+    <div id="game-app" class="w-full max-w-md bg-stone-100 shadow-2xl h-full flex flex-col relative">
+        </div>
 
     <script>
         // --- 1. CONFIGURATION ---
         
-        // 🛠️ UPDATE YOUR PORTS HERE AFTER USING DEBUG MODE
+        // YOUR COORDINATES APPLIED HERE
         const PORTS = [
-            { id: 'kilwa', name: 'Kilwa', region: 'Africa', x: 20, y: 70, color: '#f59e0b', img: 'https://images.unsplash.com/photo-1523726491678-bf852e717f6a?auto=format&fit=crop&q=80&w=800' },
-            { id: 'aden', name: 'Aden', region: 'Arabia', x: 35, y: 35, color: '#ef4444', img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800' },
-            { id: 'calicut', name: 'Calicut', region: 'India', x: 60, y: 45, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1596401057633-565652b5e260?auto=format&fit=crop&q=80&w=800' },
-            { id: 'malacca', name: 'Malacca', region: 'SE Asia', x: 80, y: 65, color: '#10b981', img: 'https://images.unsplash.com/photo-1534234828569-1f3553dadd3d?auto=format&fit=crop&q=80&w=800' },
-            { id: 'hangzhou', name: 'Hangzhou', region: 'China', x: 90, y: 15, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1537249011568-1eb6e6c8914b?auto=format&fit=crop&q=80&w=800' },
+            { id: 'kilwa', name: 'Kilwa', region: 'Africa', x: 15, y: 77, color: '#f59e0b', img: 'https://images.unsplash.com/photo-1523726491678-bf852e717f6a?auto=format&fit=crop&q=80&w=800' },
+            { id: 'aden', name: 'Aden', region: 'Arabia', x: 18, y: 46, color: '#ef4444', img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800' },
+            { id: 'calicut', name: 'Calicut', region: 'India', x: 47, y: 50, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1596401057633-565652b5e260?auto=format&fit=crop&q=80&w=800' },
+            { id: 'malacca', name: 'Malacca', region: 'SE Asia', x: 71, y: 60, color: '#10b981', img: 'https://images.unsplash.com/photo-1534234828569-1f3553dadd3d?auto=format&fit=crop&q=80&w=800' },
+            { id: 'hangzhou', name: 'Hangzhou', region: 'China', x: 88, y: 22, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1537249011568-1eb6e6c8914b?auto=format&fit=crop&q=80&w=800' },
         ];
 
         const GOODS = {
@@ -37,6 +40,7 @@
             porcelain: { name: 'Porcelain', basePrice: 100, icon: '🏺' },
         };
 
+        // Economic Multipliers (High number = Expensive/Sell High, Low = Cheap/Buy Low)
         const ECONOMY = {
             kilwa: { iron: 1.2, ivory: 0.3, spices: 1.5, silk: 2.0, porcelain: 2.5 },
             aden: { iron: 0.8, ivory: 1.2, spices: 1.0, silk: 1.5, porcelain: 2.0 },
@@ -46,27 +50,23 @@
         };
 
         const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const MAX_INVENTORY = 15;
-        const END_AGE = 50;
+        const MAX_INVENTORY = 20;
 
         // --- 2. STATE ---
         let state = {
-            view: 'map', // Start directly on map for debugging
-            debugMode: false,
-            lastDebugCoord: null, // Stores {x, y} of last click
-            currentPortId: 'calicut',
-            month: 0,
-            year: 1200,
-            age: 20,
-            money: 120,
+            view: 'map', 
+            currentPortId: 'kilwa', // Start in Kilwa
+            month: 0, // Jan
+            year: 1300,
+            money: 100,
             inventory: {},
-            influence: { kilwa:0, aden:0, calicut:0, malacca:0, hangzhou:0 },
-            log: [{ text: "Welcome.", type: "neutral" }],
-            activeEvents: []
+            log: [{ text: "Welcome to the Indian Ocean.", type: "neutral" }]
         };
 
-        // --- 3. LOGIC ---
+        // --- 3. GAME LOGIC ---
         
+        // Summer (Apr-Sep) = EAST WIND
+        // Winter (Oct-Mar) = WEST WIND
         function getWindDirection() {
             return (state.month >= 3 && state.month <= 8) ? 'east' : 'west';
         }
@@ -77,24 +77,15 @@
 
         function getPrices() {
             const port = state.currentPortId;
-            const inf = state.influence[port];
-            const buyMod = 1.2 - (inf * 0.003); 
-            const sellMod = 0.8 + (inf * 0.003);
-            
             let prices = {};
-            const eventMultipliers = {};
-            state.activeEvents.forEach(ev => {
-                if (ev.effects[port]) Object.assign(eventMultipliers, ev.effects[port]);
-            });
-
+            
             Object.keys(GOODS).forEach(key => {
                 const base = GOODS[key].basePrice;
                 const localMult = ECONOMY[port][key];
-                const eventMult = eventMultipliers[key] || 1.0;
+                // Simple static pricing for stability
                 prices[key] = {
-                    buy: Math.floor(base * localMult * eventMult * buyMod),
-                    sell: Math.floor(base * localMult * eventMult * sellMod),
-                    dealText: inf < 30 ? "Stranger" : (inf > 80 ? "Family" : "Partner")
+                    buy: Math.floor(base * localMult),
+                    sell: Math.floor(base * localMult * 0.9) // 10% spread
                 };
             });
             return prices;
@@ -106,66 +97,41 @@
             while (newMonth > 11) { newMonth -= 12; yearAdd++; }
             state.month = newMonth;
             state.year += yearAdd;
-            state.age += (months / 12);
-            
-            // Random Event
-            if(Math.random() < 0.35) {
-                state.log.unshift({text: "Markets shift due to storms.", type: "event"});
-            } else {
-                state.activeEvents = [];
-            }
-
-            if(state.age >= END_AGE) state.view = 'end';
             render();
-        }
-
-        // --- 4. DEBUG & INTERACTION ---
-
-        function toggleDebug() {
-            state.debugMode = !state.debugMode;
-            state.lastDebugCoord = null;
-            render();
-        }
-
-        // 🎯 THE MAGIC FUNCTION: Gets coordinates on click
-        function handleMapClick(e) {
-            // If we are in debug mode, calculate coordinates
-            if (state.debugMode) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                // Calculate percentage relative to the container
-                const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-                const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
-                
-                state.lastDebugCoord = { x, y };
-                render(); // Re-render to show the red dot and numbers
-                return; // Stop normal travel logic
-            }
         }
 
         function actionTravel(e, targetId) {
-            if (state.debugMode) return; // Disable travel while debugging
-            e.stopPropagation(); // Stop click from bubbling
+            e.stopPropagation(); 
 
             if(targetId === state.currentPortId) {
                 state.view = 'market';
                 render();
                 return;
             }
-            const currentIdx = PORTS.findIndex(p => p.id === state.currentPortId);
-            const targetIdx = PORTS.findIndex(p => p.id === targetId);
-            const dir = targetIdx > currentIdx ? 'east' : 'west';
+
+            const currentPort = getCurrentPort();
+            const targetPort = PORTS.find(p => p.id === targetId);
             const wind = getWindDirection();
 
-            if(dir !== wind) {
-                state.log.unshift({text: `Wind is blowing ${wind}!`, type: 'bad'});
+            // Determine travel direction based on X coordinate
+            // X increases as you go East
+            const travelDir = targetPort.x > currentPort.x ? 'east' : 'west';
+
+            if(travelDir !== wind) {
+                // FAIL: MOVING AGAINST WIND
+                state.log.unshift({text: `Cannot sail ${travelDir.toUpperCase()} against the ${wind.toUpperCase()} wind!`, type: 'bad'});
                 render();
                 return;
             }
 
+            // SUCCESS
+            const dist = Math.abs(targetPort.x - currentPort.x);
+            const timeTaken = dist > 40 ? 2 : 1; // Far ports take 2 months
+
             state.currentPortId = targetId;
             state.view = 'market';
-            state.log.unshift({text: `Arrived at ${PORTS[targetIdx].name}`, type: 'good'});
-            advanceTime(1);
+            state.log.unshift({text: `Arrived at ${targetPort.name} (${timeTaken} mo).`, type: 'good'});
+            advanceTime(timeTaken);
         }
 
         function actionTrade(item, isBuy) {
@@ -178,34 +144,31 @@
                 if(state.money >= price && totalItems < MAX_INVENTORY) {
                     state.money -= price;
                     state.inventory[item] = owned + 1;
+                    state.log.unshift({text: `Bought ${GOODS[item].name} for ${price}g`, type: 'neutral'});
+                } else if (totalItems >= MAX_INVENTORY) {
+                    state.log.unshift({text: `Cargo full!`, type: 'bad'});
                 }
             } else {
                 if(owned > 0) {
                     state.money += price;
                     state.inventory[item] = owned - 1;
+                    state.log.unshift({text: `Sold ${GOODS[item].name} for ${price}g`, type: 'good'});
                 }
             }
             render();
         }
 
-        function actionWait(type) {
-            if(type === 'guard') {
-                state.money += 10;
-            } else {
-                if(state.money >= 15) {
-                    state.money -= 15;
-                    state.influence[state.currentPortId] = Math.min(100, state.influence[state.currentPortId] + 15);
-                }
-            }
+        function waitMonth() {
+            state.log.unshift({text: `Waited for winds to change.`, type: 'neutral'});
             advanceTime(1);
         }
 
-        // --- 5. RENDERERS ---
+        // --- 4. RENDERERS ---
 
         function renderHeader() {
             const wind = getWindDirection();
             return `
-            <div class="bg-stone-900 text-stone-100 p-2 flex justify-between items-center h-14 shrink-0 z-30 shadow-md">
+            <div class="bg-stone-900 text-stone-100 p-3 flex justify-between items-center h-16 shrink-0 z-30 shadow-md">
                 <div class="flex items-center gap-4">
                     <div class="leading-tight">
                         <div class="text-[10px] text-stone-400">DATE</div>
@@ -213,78 +176,67 @@
                     </div>
                     <div class="leading-tight">
                         <div class="text-[10px] text-stone-400">WIND</div>
-                        <div class="font-bold text-xs ${wind==='east'?'text-emerald-400':'text-orange-400'}">
-                            ${wind==='east' ? 'EAST →' : '← WEST'}
+                        <div class="font-bold text-xs flex items-center gap-1 ${wind==='east'?'text-emerald-400':'text-orange-400'}">
+                            ${wind==='east' ? 'EAST <i data-lucide="arrow-right" width="12"></i>' : '<i data-lucide="arrow-left" width="12"></i> WEST'}
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                     <div class="text-right mr-2">
-                        <div class="text-[10px] text-stone-400">GOLD</div>
-                        <div class="font-mono text-yellow-400 font-bold">${state.money}</div>
-                     </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-stone-400">GOLD</div>
+                    <div class="font-mono text-yellow-400 font-bold text-lg">${state.money}</div>
                 </div>
             </div>`;
         }
 
         function renderMap() {
             const wind = getWindDirection();
-            let html = `<div class="w-full h-full relative bg-[#1e293b] overflow-hidden cursor-crosshair" onclick="handleMapClick(event)">
+            const currentPort = getCurrentPort();
+
+            let html = `<div class="w-full h-full relative bg-[#0f172a] overflow-hidden tap-highlight-transparent">
                 
-                <img src="./IMG_4324.png" class="absolute inset-0 w-full h-full object-fill z-0" onerror="alert('Error: IMG_4324.png not found!')">
-
-                <svg class="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-50">
-                    <defs>
-                        <pattern id="windPat" width="100" height="20" patternUnits="userSpaceOnUse">
-                             <path d="M 10 10 Q 50 ${wind === 'east' ? 5 : 15} 90 10" fill="none" stroke="${wind === 'east' ? '#10b981' : '#f97316'}" stroke-width="0.5" stroke-dasharray="2 2" />
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#windPat)" />
-                </svg>
-
-                <button onclick="event.stopPropagation(); toggleDebug()" class="absolute top-2 right-2 z-50 px-3 py-1 rounded text-xs font-bold border ${state.debugMode ? 'bg-red-600 text-white border-red-400' : 'bg-black/50 text-stone-400 border-stone-600'}">
-                    ${state.debugMode ? '🐞 DEBUG ON' : '🐞 DEBUG OFF'}
-                </button>
-
-                ${state.debugMode && state.lastDebugCoord ? `
-                    <div class="absolute top-12 right-2 z-50 bg-black/80 text-white p-2 rounded border border-white/20 text-xs font-mono">
-                        <div class="text-yellow-400 font-bold mb-1">COORDINATES FOUND:</div>
-                        <div>x: <span class="text-green-400 text-lg">${state.lastDebugCoord.x}</span></div>
-                        <div>y: <span class="text-green-400 text-lg">${state.lastDebugCoord.y}</span></div>
-                        <div class="mt-1 text-[10px] text-stone-400">Update PORTS array with these!</div>
-                    </div>
-                    <div class="absolute w-4 h-4 rounded-full border-2 border-red-500 bg-red-500/50 z-40 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                         style="left: ${state.lastDebugCoord.x}%; top: ${state.lastDebugCoord.y}%;">
-                    </div>
-                ` : ''}
+                <img src="./IMG_4324.png" class="absolute inset-0 w-full h-full object-cover opacity-60 z-0">
+                
+                <div class="absolute top-4 left-0 w-full flex justify-center pointer-events-none z-10 opacity-30">
+                     <div class="text-6xl font-black tracking-widest ${wind==='east'?'text-emerald-500':'text-orange-500'}">
+                        ${wind === 'east' ? '>>>' : '<<<'}
+                     </div>
+                </div>
             `;
 
-            PORTS.forEach((port, idx) => {
+            PORTS.forEach((port) => {
                 const isCurrent = state.currentPortId === port.id;
-                const currentIdx = PORTS.findIndex(p => p.id === state.currentPortId);
-                const dir = idx > currentIdx ? 'east' : 'west';
-                const reachable = isCurrent || dir === wind;
                 
-                // If Debugging, show all ports fully visible so we can see if they align
-                const opacity = state.debugMode ? 'opacity-100' : (reachable ? 'opacity-100' : 'opacity-50 grayscale');
+                // Logic: Can we sail here?
+                // East wind allows going to X > currentX
+                // West wind allows going to X < currentX
+                const dirToPort = port.x > currentPort.x ? 'east' : (port.x < currentPort.x ? 'west' : 'same');
+                const reachable = isCurrent || dirToPort === wind;
+                
+                // Visual Styling
+                const opacity = reachable ? 'opacity-100' : 'opacity-40 grayscale';
+                const scale = isCurrent ? 'scale-110 z-30' : 'scale-100 z-20';
+                const border = isCurrent ? 'border-white ring-2 ring-blue-500' : (reachable ? 'border-green-400' : 'border-stone-600');
 
                 html += `
                 <div onclick="actionTravel(event, '${port.id}')" 
-                     class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20 transition-all ${opacity} ${state.debugMode ? 'pointer-events-none' : 'cursor-pointer hover:scale-110'}"
+                     class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300 cursor-pointer ${scale} ${opacity}"
                      style="left: ${port.x}%; top: ${port.y}%;">
                     
-                    ${reachable && !isCurrent && !state.debugMode ? '<div class="absolute -inset-4 rounded-full border-2 border-green-400 animate-ping opacity-50 pointer-events-none"></div>' : ''}
+                    ${reachable && !isCurrent ? '<div class="absolute -inset-2 rounded-full border border-green-400 animate-ping opacity-50 pointer-events-none"></div>' : ''}
                     
-                    <div class="p-2 rounded-full border-2 shadow-xl bg-stone-800 ${isCurrent ? 'border-blue-500 scale-125' : reachable ? 'border-green-500' : 'border-stone-600'}">
-                        <i data-lucide="${isCurrent ? 'ship' : 'anchor'}" class="${isCurrent ? 'text-blue-400' : (reachable ? 'text-green-400' : 'text-stone-500')}" width="${isCurrent ? 20 : 16}"></i>
-                    </div>
-                    <div class="mt-1 bg-black/80 px-2 py-0.5 rounded text-[9px] font-bold text-white whitespace-nowrap backdrop-blur-sm border border-white/10">
+                    <div class="w-4 h-4 rounded-full border-2 bg-stone-800 shadow-xl ${border}"></div>
+                    
+                    <div class="mt-1 bg-black/70 px-2 py-0.5 rounded text-[10px] font-bold text-white whitespace-nowrap backdrop-blur-sm border border-white/10 shadow-lg">
                         ${port.name}
                     </div>
                 </div>`;
             });
 
-            html += `</div>`;
+            html += `
+                <button onclick="waitMonth()" class="absolute bottom-6 right-6 z-40 bg-stone-800 text-white px-4 py-3 rounded-full shadow-xl border border-stone-600 font-bold text-xs flex items-center gap-2 active:scale-95">
+                    <i data-lucide="hourglass" width="16"></i> Wait 1 Mo
+                </button>
+            </div>`;
             return html;
         }
 
@@ -295,38 +247,27 @@
             
             let html = `
             <div class="flex-1 bg-stone-100 flex flex-col relative overflow-hidden h-full">
-                <div class="h-[35%] w-full relative shrink-0 bg-stone-800">
-                    <img src="${port.img}" class="w-full h-full object-cover opacity-90">
-                    <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-stone-100"></div>
-                    <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-white z-10">
-                        <button onclick="state.view='map'; render()" class="bg-black/40 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-black/60">
-                            <i data-lucide="chevron-left" width="14"></i> <span class="text-xs font-bold">Map</span>
+                <div class="h-[30%] w-full relative shrink-0 bg-stone-800">
+                    <img src="${port.img}" class="w-full h-full object-cover opacity-80">
+                    <div class="absolute inset-0 bg-gradient-to-t from-stone-900 via-transparent to-transparent"></div>
+                    
+                    <div class="absolute top-4 left-4 z-10">
+                        <button onclick="state.view='map'; render()" class="bg-black/50 backdrop-blur border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-1 text-white hover:bg-black/70 active:scale-95 transition-transform">
+                            <i data-lucide="map" width="14"></i> <span class="text-xs font-bold">Back to Map</span>
                         </button>
-                        <div class="bg-black/40 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl text-center">
-                            <h2 class="text-xl font-bold leading-none shadow-black drop-shadow-lg">${port.name}</h2>
-                            <div class="text-[10px] uppercase tracking-wider text-stone-200 mt-1">Infl: ${state.influence[port.id]}%</div>
-                        </div>
+                    </div>
+
+                    <div class="absolute bottom-4 left-4 text-white z-10">
+                        <h2 class="text-2xl font-bold leading-none shadow-black drop-shadow-md">${port.name}</h2>
+                        <div class="text-xs text-stone-300 uppercase tracking-widest">${port.region}</div>
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-y-auto relative z-20 -mt-6 px-4 pb-4">
-                    <div class="bg-white rounded-xl shadow-lg border border-stone-200 p-3 mb-4 flex gap-2">
-                         <button onclick="actionWait('guard')" class="flex-1 bg-stone-50 border border-stone-200 rounded p-2 text-center hover:bg-blue-50">
-                            <i data-lucide="shield" class="mx-auto text-stone-400 mb-1" width="16"></i>
-                            <div class="text-xs font-bold text-stone-700">Enclave</div>
-                            <div class="text-[9px] text-stone-400">+10g</div>
-                         </button>
-                         <button onclick="actionWait('social')" class="flex-1 bg-stone-50 border border-stone-200 rounded p-2 text-center hover:bg-purple-50">
-                            <i data-lucide="users" class="mx-auto text-purple-400 mb-1" width="16"></i>
-                            <div class="text-xs font-bold text-stone-700">Court</div>
-                            <div class="text-[9px] text-stone-400">-15g / +Infl</div>
-                         </button>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-lg border border-stone-200 overflow-hidden">
-                        <div class="bg-stone-50 px-3 py-2 border-b border-stone-200 flex justify-between items-center">
-                            <span class="text-xs font-bold text-stone-500 uppercase">Commodities</span>
-                            <span class="text-[10px] text-stone-400">Hold: ${totalItems}/${MAX_INVENTORY}</span>
+                <div class="flex-1 overflow-y-auto p-4 bg-stone-100">
+                    <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                        <div class="bg-stone-50 px-4 py-2 border-b border-stone-200 flex justify-between items-center">
+                            <span class="text-xs font-bold text-stone-500 uppercase tracking-wider">Marketplace</span>
+                            <span class="text-[10px] text-stone-400 font-mono">CAPACITY: ${totalItems}/${MAX_INVENTORY}</span>
                         </div>
             `;
 
@@ -337,31 +278,34 @@
                 const canBuy = state.money >= p.buy && totalItems < MAX_INVENTORY;
                 
                 html += `
-                <div class="p-3 flex items-center justify-between border-b border-stone-100">
+                <div class="p-3 flex items-center justify-between border-b border-stone-100 last:border-0">
                     <div class="flex items-center gap-3">
-                        <div class="text-2xl">${good.icon}</div>
+                        <div class="text-2xl w-8 text-center">${good.icon}</div>
                         <div>
                             <div class="font-bold text-stone-800 text-sm">${good.name}</div>
-                            <div class="text-[10px] text-stone-400">${p.dealText}</div>
+                            <div class="text-[10px] text-stone-400">Owned: ${owned}</div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
                         <button onclick="actionTrade('${key}', true)" ${!canBuy ? 'disabled' : ''} 
-                            class="w-12 py-1 rounded text-center border transition-all active:scale-95 ${canBuy ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-stone-50 border-stone-100 text-stone-300 opacity-50'}">
-                            <div class="text-[8px] font-bold uppercase">Buy</div>
-                            <div class="text-xs font-bold">${p.buy}</div>
+                            class="flex flex-col items-center justify-center w-14 py-1 rounded border transition-all active:scale-95 ${canBuy ? 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm' : 'bg-stone-50 border-stone-100 text-stone-300 opacity-50'}">
+                            <span class="text-[9px] font-bold uppercase">Buy</span>
+                            <span class="text-xs font-bold">${p.buy}</span>
                         </button>
                         <button onclick="actionTrade('${key}', false)" ${owned===0 ? 'disabled' : ''} 
-                            class="w-12 py-1 rounded text-center border transition-all active:scale-95 relative ${owned>0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-stone-50 border-stone-100 text-stone-300 opacity-50'}">
-                            <div class="text-[8px] font-bold uppercase">Sell</div>
-                            <div class="text-xs font-bold">${p.sell}</div>
-                            ${owned > 0 ? `<div class="absolute -top-2 -right-2 bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm border border-white">${owned}</div>` : ''}
+                            class="flex flex-col items-center justify-center w-14 py-1 rounded border transition-all active:scale-95 ${owned>0 ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-sm' : 'bg-stone-50 border-stone-100 text-stone-300 opacity-50'}">
+                            <span class="text-[9px] font-bold uppercase">Sell</span>
+                            <span class="text-xs font-bold">${p.sell}</span>
                         </button>
                     </div>
                 </div>`;
             });
 
-            html += `</div></div></div>`;
+            html += `</div>
+                    <button onclick="waitMonth()" class="mt-4 w-full py-3 bg-stone-200 text-stone-600 font-bold rounded-lg text-xs flex items-center justify-center gap-2 active:bg-stone-300">
+                        <i data-lucide="hourglass" width="14"></i> Wait here 1 Month
+                    </button>
+            </div></div>`;
             return html;
         }
 
@@ -369,34 +313,28 @@
             const container = document.getElementById('log-container');
             if(!container) return;
             container.innerHTML = state.log.map(l => `
-                <div class="p-1.5 rounded border-l-2 mb-1 text-xs font-mono ${l.type === 'good' ? 'border-emerald-500 bg-emerald-100' : l.type === 'bad' ? 'border-red-500 bg-red-100' : 'border-stone-400'}">${l.text}</div>
+                <div class="p-2 border-b border-stone-100 text-[11px] font-mono leading-tight ${l.type === 'good' ? 'text-emerald-700 bg-emerald-50/50' : l.type === 'bad' ? 'text-red-700 bg-red-50/50' : 'text-stone-600'}">
+                    ${l.text}
+                </div>
             `).join('');
         }
 
         function render() {
             const app = document.getElementById('game-app');
-            let content = '';
+            let content = renderHeader();
             
-            if (state.view === 'end') {
-                content = `<div class="p-10 text-center flex flex-col justify-center h-full">
-                    <h1 class="text-3xl font-bold">The End</h1>
-                    <p class="mb-4">You retired at age 50.</p>
-                    <div class="text-xl">Wealth: ${state.money}</div>
-                    <button onclick="location.reload()" class="bg-blue-600 text-white p-3 rounded mt-4">Play Again</button>
-                </div>`;
-            } else {
-                content = renderHeader();
-                content += `<div class="flex-1 overflow-hidden relative flex flex-col">
-                    ${state.view === 'map' ? renderMap() : renderMarket()}
-                </div>`;
-                content += `<div class="h-32 bg-stone-100 border-t-4 border-stone-200 overflow-y-auto p-2 shrink-0" id="log-container"></div>`;
-            }
+            content += `<div class="flex-1 overflow-hidden relative flex flex-col">
+                ${state.view === 'map' ? renderMap() : renderMarket()}
+            </div>`;
+            
+            content += `<div class="h-24 bg-white border-t border-stone-200 overflow-y-auto shrink-0" id="log-container"></div>`;
 
             app.innerHTML = content;
             renderLog();
             lucide.createIcons();
         }
 
+        // Start
         render();
 
     </script>
