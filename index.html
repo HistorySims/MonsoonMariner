@@ -307,7 +307,7 @@
             type: "good"
           });
         } else {
-          const penalty = (Math.random() < 0.5) ? 10 : 5;
+          const penalty = (Math.random() < 0.5) ? 4 : 2;
           state.influence[state.currentPortId] = Math.max(0, state.influence[state.currentPortId] - penalty);
 
           // occasional extra cost (bribe/apology)
